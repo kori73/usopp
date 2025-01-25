@@ -172,7 +172,7 @@ def seasonal_data(n_components, noise=0.001):
 
 def rbf_seasonal_data(n_components, sigma=0.015, noise=0.001):
     def X(t, peaks, sigma, year):
-        mod = (t % year)[:, None]
+        mod = np.array((t % year))[:, None]
         left_difference = np.sqrt((mod - peaks[None, :]) ** 2)
         right_difference = np.abs(year - left_difference)
         return np.exp(- ((np.minimum(left_difference, right_difference)) ** 2) / (2 * sigma**2))

@@ -1,13 +1,13 @@
 import pandas as pd
-import pymc3 as pm
-from timeseers.utils import MinMaxScaler, StdScaler, add_subplot
-from timeseers.likelihood import Gaussian
+import pymc as pm
+from usopp.utils import MinMaxScaler, StdScaler, add_subplot
+from usopp.likelihood import Gaussian
 import numpy as np
 from abc import ABC, abstractmethod
 
 
 class TimeSeriesModel(ABC):
-    def fit(self, X, y, X_scaler=MinMaxScaler, y_scaler=StdScaler, likelihood=None, **sample_kwargs):
+    def fit(self, X, y, X_scaler=MinMaxScaler, y_scaler=StdScaler, likelihood=None, use_mcmc=False, **sample_kwargs):
         if not X.index.is_monotonic_increasing:
             raise ValueError('index of X is not monotonically increasing. You might want to call `.reset_index()`')
 
@@ -27,7 +27,10 @@ class TimeSeriesModel(ABC):
             likelihood = Gaussian()
         with model:
             likelihood.observed(mu, y_scaled)
-            self.trace_ = pm.sample(**sample_kwargs)
+            if use_mcmc:
+                self.trace_ = pm.sample(**sample_kwargs)
+            else:
+                self.trace_ = pm.find_MAP(**sample_kwargs)
 
     def plot_components(self, X_true=None, y_true=None, groups=None, fig=None):
         import matplotlib.pyplot as plt
