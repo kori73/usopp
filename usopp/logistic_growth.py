@@ -1,9 +1,9 @@
 import numpy as np
-import theano.tensor as T
-import theano
-from timeseers.timeseries_model import TimeSeriesModel
-from timeseers.utils import add_subplot, get_group_definition
-import pymc3 as pm
+import pytensor.tensor as pt
+import pytensor
+from usopp.timeseries_model import TimeSeriesModel
+from usopp.utils import add_subplot, get_group_definition
+import pymc as pm
 
 
 class LogisticGrowth(TimeSeriesModel):
@@ -24,17 +24,17 @@ class LogisticGrowth(TimeSeriesModel):
     def definition(self, model, X, scale_factor):
 
         def update_gamma(j, gamma, i, delta, offset, rate, change_point):
-            return T.set_subtensor(
+            return pt.set_subtensor(
                 gamma[i, j],
-                (change_point[j] - offset[i] - T.sum(gamma[i, :j])) *
-                (1 - (rate[i] + T.sum(delta[i, :j])) / (rate[i] + T.sum(delta[i, :j+1])))
+                (change_point[j] - offset[i] - pt.sum(gamma[i, :j])) *
+                (1 - (rate[i] + pt.sum(delta[i, :j])) / (rate[i] + pt.sum(delta[i, :j+1])))
                 )
 
         def get_gamma(i, gamma_init, delta, m, k, s):
-            gamma, _ = theano.scan(
+            gamma, _ = pytensor.scan(
               update_gamma,
               sequences=[
-                  T.arange(gamma_init.shape[1]),
+                  pt.arange(gamma_init.shape[1]),
               ],
               outputs_info=gamma_init,
               non_sequences=[i, delta, m, k, s],
@@ -51,7 +51,7 @@ class LogisticGrowth(TimeSeriesModel):
 
             if self.pool_type == 'partial':
                 sigma_k = pm.HalfCauchy(self._param_name('sigma_k'), beta=self.growth_prior_scale)
-                offset_k = pm.Normal(self._param_name('offset_k'), mu=0, sd=1, shape=n_groups)
+                offset_k = pm.Normal(self._param_name('offset_k'), mu=0, sigma=1, shape=n_groups)
                 k = pm.Deterministic(self._param_name("k"), offset_k * sigma_k)
 
                 sigma_delta = pm.HalfCauchy(
@@ -66,14 +66,14 @@ class LogisticGrowth(TimeSeriesModel):
                 delta = pm.Laplace(self._param_name("delta"), 0, self.changepoints_prior_scale,
                                    shape=(n_groups, self.n_changepoints))
                 k = pm.Normal(self._param_name("k"), 0, self.growth_prior_scale,
-                              shape=n_groups, testval=np.ones(n_groups))
+                              shape=n_groups, initval=np.ones(n_groups))
 
             m = pm.Normal(self._param_name("m"), 0, 5, shape=n_groups)
 
-            gamma_init = T.zeros_like(delta)
-            gamma, _ = theano.scan(
+            gamma_init = pt.zeros_like(delta)
+            gamma, _ = pytensor.scan(
                 get_gamma,
-                sequences=[T.arange(gamma_init.shape[0])],
+                sequences=[pt.arange(gamma_init.shape[0])],
                 outputs_info=gamma_init,
                 non_sequences=[delta, m, k, self.s],
             )
@@ -92,7 +92,7 @@ class LogisticGrowth(TimeSeriesModel):
         m = trace[self._param_name("m")][:, pool_group]
 
         A = (t[:, None] > self.s) * 1
-        gamma = np.zeros(delta.T.shape)
+        gamma = np.zeros(delta.pt.shape)
         for i in range(gamma.shape[0]):
             gamma[i] = (
                 (self.s[i] - m - gamma[:i].sum(axis=0)) *

@@ -2,9 +2,9 @@ import os
 
 from setuptools import setup, find_packages
 
-base_packages = ["numpy>=1.15.4", "pandas>=0.23.4", "pymc3>=3.8"]
-plot_packages = ["matplotlib>=3.2.1"]
-dev_packages = ["pytest==5.3.4", "flake8>=3.7.9", "hypothesis==5.8.3"]
+base_packages = ["numpy", "pandas", "pymc"]
+plot_packages = ["matplotlib"]
+dev_packages = ["pytest", "hypothesis"]
 
 
 def read(fname):
@@ -12,9 +12,9 @@ def read(fname):
 
 
 setup(
-    name='timeseers',
+    name='usopp',
     packages=find_packages(where='src'),
-    package_dir={"": "src"},
+    package_dir={"": "usopp"},
     install_requires=base_packages,
     extras_require={
       "dev": dev_packages,

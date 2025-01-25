@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from timeseers import utils
+from usopp import utils
 
 
 @pytest.fixture(params=[1, 5, 10])
