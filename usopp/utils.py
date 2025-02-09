@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 import pandas as pd
 
 
@@ -95,6 +96,36 @@ def add_subplot(height=5):
     w, h = fig.get_size_inches()
     fig.set_size_inches(w, h + height)
     return fig.add_subplot(len(fig.axes) + 1, 1, len(fig.axes) + 1)
+
+
+class Drawer():
+
+    def __init__(self) -> None:
+        """Constructs a Drawer for one column and multiple rows.
+
+        Note that subplots are added to the bottom.
+        """
+        self.fig = plt.figure()
+
+        # Start with one subplot
+        self.row = 0
+
+    def add_subplot(self) -> None:
+        """Plots the data to a new subplot at the bottom."""
+        self.row += 1
+        gs = gridspec.GridSpec(self.row, 1)
+
+        # Reposition existing subplots
+        for i, ax in enumerate(self.fig.axes):
+            ax.set_position(gs[i].get_position(self.fig))
+            ax.set_subplotspec(gs[i])
+
+        # Add new subplot
+        new_ax = self.fig.add_subplot(gs[self.row-1])
+        return new_ax
+
+    def show(self) -> None:
+        plt.show()
 
 
 def trend_data(n_changepoints, location="spaced", noise=0.001):
