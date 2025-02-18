@@ -87,12 +87,17 @@ class LogisticGrowth(TimeSeriesModel):
 
     def _predict(self, trace, t, pool_group=0):
 
-        delta = trace[self._param_name("delta")][:, pool_group]
-        k = trace[self._param_name("k")][:, pool_group]
-        m = trace[self._param_name("m")][:, pool_group]
-
+        delta = trace[self._param_name("delta")]
+        if isinstance(delta, np.ndarray):
+            delta = delta[pool_group].reshape(1, -1)
+            k = trace[self._param_name("k")][pool_group]
+            m = trace[self._param_name("m")][pool_group]
+            gamma = np.zeros(delta.T.shape)
+        else:
+            delta = delta[:, pool_group]
+            k = trace[self._param_name("k")][:, pool_group]
+            m = trace[self._param_name("m")][:, pool_group]
         A = (t[:, None] > self.s) * 1
-        gamma = np.zeros(delta.pt.shape)
         for i in range(gamma.shape[0]):
             gamma[i] = (
                 (self.s[i] - m - gamma[:i].sum(axis=0)) *
@@ -104,7 +109,7 @@ class LogisticGrowth(TimeSeriesModel):
         )
         return self.cap_scaled / (1 + np.exp(-g))
 
-    def plot(self, trace, scaled_t, y_scaler):
+    def plot(self, trace, scaled_t, y_scaler, drawer):
         ax = add_subplot()
         ax.set_title(str(self))
         ax.set_xticks([])
