@@ -59,7 +59,6 @@ class FourierSeasonality(TimeSeriesModel):
         beta = trace[self._param_name("beta")]
         # mcmc
         if isinstance(beta, DataArray):
-            import pdb; pdb.set_trace()
             beta = beta.values[:, :,pool_group, :].reshape(-1, self.n *2).T
             result = self._X_t(t, self.p_, self.n) @ beta
         # MAP
