@@ -89,19 +89,21 @@ class LogisticGrowth(TimeSeriesModel):
 
         delta = trace[self._param_name("delta")]
         if isinstance(delta, np.ndarray):
-            delta = delta[pool_group].reshape(1, -1)
+            delta = delta[pool_group].reshape(1, self.n_changepoints)
             k = trace[self._param_name("k")][pool_group]
             m = trace[self._param_name("m")][pool_group]
             gamma = np.zeros(delta.T.shape)
         else:
-            delta = delta[:, pool_group]
-            k = trace[self._param_name("k")][:, pool_group]
-            m = trace[self._param_name("m")][:, pool_group]
+            delta = delta.values[:, :, pool_group, :].reshape(-1, self.n_changepoints)
+            k = trace[self._param_name("k")].values[:, :, pool_group].reshape(1, -1)
+            m = trace[self._param_name("m")].values[:, :, pool_group].reshape(1, -1)
+            gamma = np.zeros(delta.T.shape)
+
         A = (t[:, None] > self.s) * 1
+        
         for i in range(gamma.shape[0]):
             gamma[i] = (
-                (self.s[i] - m - gamma[:i].sum(axis=0)) *
-                (1 - ((k + delta[:, :i].sum(axis=1)) / (k + delta[:, :i+1].sum(axis=1)))).T
+                (self.s[i] - m - gamma[:i].sum(axis=0)) * (1 - ((k + delta[:, :i].sum(axis=1)) / (k + delta[:, :i+1].sum(axis=1))))
             )
         g = (
             (k + A @ delta.T) *
