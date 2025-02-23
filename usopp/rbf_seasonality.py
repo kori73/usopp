@@ -65,10 +65,10 @@ class RBFSeasonality(TimeSeriesModel):
         return seasonality
 
     def _predict(self, trace, t, pool_group=0):
-        return self._X_t(t, self.peaks_, self.sigma, self.p_) @ trace[self._param_name("beta")][:, pool_group].T
+        return self._X_t(t, self.peaks_, self.sigma, self.p_) @ trace[self._param_name("beta")].values[:, :, pool_group, :].reshape(-1, len(self.peaks)).T
 
-    def plot(self, trace, scaled_t, y_scaler):
-        ax = add_subplot()
+    def plot(self, trace, scaled_t, y_scaler, drawer):
+        ax = drawer.add_subplot()
         ax.set_title(str(self))
 
         seasonality_return = np.empty((len(scaled_t), len(self.groups_)))
