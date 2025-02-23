@@ -29,6 +29,8 @@ jobs:
     - name: Test with pytest
       run: |
         pytest
+    - name: Register Jupyter Kernel
+      run: python -m ipykernel install --user --name=python3
     - name: Run notebook tests
       run: |
           jupyter nbconvert --to notebook --execute tests/plot_tests.ipynb --output output.ipynb
