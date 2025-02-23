@@ -13,7 +13,7 @@ def read(fname):
 
 setup(
     name='usopp',
-    packages=find_packages(where='src'),
+    packages=find_packages(where='usopp'),
     package_dir={"": "usopp"},
     install_requires=base_packages,
     extras_require={
