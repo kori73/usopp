@@ -1,9 +1,12 @@
+from abc import ABC, abstractmethod
+
 import pandas as pd
+import numpy as np
 import pymc as pm
+
 from usopp.utils import MinMaxScaler, StdScaler, add_subplot
 from usopp.likelihood import Gaussian
-import numpy as np
-from abc import ABC, abstractmethod
+from usopp.utils import Drawer
 
 
 class TimeSeriesModel(ABC):
@@ -28,7 +31,7 @@ class TimeSeriesModel(ABC):
         with model:
             likelihood.observed(mu, y_scaled)
             if use_mcmc:
-                self.trace_ = pm.sample(**sample_kwargs)
+                self.trace_ = pm.sample(**sample_kwargs)["posterior"]
             else:
                 self.trace_ = pm.find_MAP(**sample_kwargs)
 
@@ -37,16 +40,15 @@ class TimeSeriesModel(ABC):
 
         if fig is None:
             fig = plt.figure(figsize=(18, 1))
-
+        drawer = Drawer()
         lookahead_scale = 0.3
         t_min, t_max = self._X_scaler_.min_["t"], self._X_scaler_.max_["t"]
         t_max += (t_max - t_min) * lookahead_scale
         t = pd.date_range(t_min, t_max, freq='D')
-
         scaled_t = np.linspace(0, 1 + lookahead_scale, len(t))
-        total = self.plot(self.trace_, scaled_t, self._y_scaler_)
+        total = self.plot(self.trace_, scaled_t, self._y_scaler_, drawer)
 
-        ax = add_subplot()
+        ax = drawer.add_subplot()
         ax.set_title("overall")
         ax.plot(t, self._y_scaler_.inv_transform(total))
 
@@ -56,9 +58,9 @@ class TimeSeriesModel(ABC):
                     mask = groups == group
                     ax.scatter(X_true["t"][mask], y_true[mask], label=group, marker='.', alpha=0.2)
             else:
-                ax.scatter(X_true["t"], y_true, c="k", marker='.', alpha=0.2)
+                ax.scatter(X_true["t"], y_true, c="k", marker='.', alpha=0.2, lw=0.5)
         fig.tight_layout()
-        return fig
+        return t
 
     @abstractmethod
     def plot(self, trace, t, y_scaler):

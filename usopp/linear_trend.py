@@ -1,4 +1,6 @@
 import numpy as np
+from xarray.core.dataset import Dataset
+
 from usopp.timeseries_model import TimeSeriesModel
 from usopp.utils import add_subplot, get_group_definition
 import pymc as pm
@@ -52,15 +54,22 @@ class LinearTrend(TimeSeriesModel):
 
     def _predict(self, trace, t, pool_group=0):
         A = (t[:, None] > self.s) * 1
-
-        k, m = trace[self._param_name("k")][:, pool_group], trace[self._param_name("m")][:, pool_group]
-        growth = k + A @ trace[self._param_name("delta")][:, pool_group].T
-        gamma = -self.s[:, None] * trace[self._param_name("delta")][:, pool_group].T
+        if isinstance(trace, Dataset):
+            k = trace[self._param_name("k")][:, :, pool_group].values.reshape(1, -1)
+            m = trace[self._param_name("m")][:, :, pool_group].values.reshape(1, -1)
+            delta = trace[self._param_name("delta")][:, :, pool_group, :].values.reshape(-1, self.n_changepoints)
+        else:
+            k = trace[self._param_name("k")][pool_group]
+            m = trace[self._param_name("m")][pool_group]
+            delta = trace[self._param_name("delta")][pool_group, :].reshape(-1, self.n_changepoints)
+        growth = k + A @ delta.T
+        gamma = -self.s[:, None] * delta.T
         offset = m + A @ gamma
-        return growth * t[:, None] + offset
+        result = growth * t[:, None] + offset
+        return result
 
-    def plot(self, trace, scaled_t, y_scaler):
-        ax = add_subplot()
+    def plot(self, trace, scaled_t, y_scaler, drawer):
+        ax = drawer.add_subplot()
         ax.set_title(str(self))
         ax.set_xticks([])
         trend_return = np.empty((len(scaled_t), len(self.groups_)))

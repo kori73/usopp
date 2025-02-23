@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pymc as pm
+from xarray.core.dataarray import DataArray
 from usopp.timeseries_model import TimeSeriesModel
 from usopp.utils import add_subplot, get_group_definition
 
@@ -55,12 +56,21 @@ class FourierSeasonality(TimeSeriesModel):
         return seasonality
 
     def _predict(self, trace, t, pool_group=0):
-        return self._X_t(t, self.p_, self.n) @ trace[self._param_name("beta")][:, pool_group].T
+        beta = trace[self._param_name("beta")]
+        # mcmc
+        if isinstance(beta, DataArray):
+            beta = beta.values[:, :,pool_group, :].reshape(-1, self.n *2).T
+            result = self._X_t(t, self.p_, self.n) @ beta
+        # MAP
+        else:
+            beta = beta[pool_group, :]
+            result = self._X_t(t, self.p_, self.n) @ beta
+            result = result.reshape(result.shape[0], -1)
+        return result
 
-    def plot(self, trace, scaled_t, y_scaler):
-        ax = add_subplot()
+    def plot(self, trace, scaled_t, y_scaler, drawer):
+        ax = drawer.add_subplot()
         ax.set_title(str(self))
-
         seasonality_return = np.empty((len(scaled_t), len(self.groups_)))
         for group_code, group_name in self.groups_.items():
             scaled_s = self._predict(trace, scaled_t, group_code)

@@ -87,16 +87,23 @@ class LogisticGrowth(TimeSeriesModel):
 
     def _predict(self, trace, t, pool_group=0):
 
-        delta = trace[self._param_name("delta")][:, pool_group]
-        k = trace[self._param_name("k")][:, pool_group]
-        m = trace[self._param_name("m")][:, pool_group]
+        delta = trace[self._param_name("delta")]
+        if isinstance(delta, np.ndarray):
+            delta = delta[pool_group].reshape(1, self.n_changepoints)
+            k = trace[self._param_name("k")][pool_group]
+            m = trace[self._param_name("m")][pool_group]
+            gamma = np.zeros(delta.T.shape)
+        else:
+            delta = delta.values[:, :, pool_group, :].reshape(-1, self.n_changepoints)
+            k = trace[self._param_name("k")].values[:, :, pool_group].reshape(1, -1)
+            m = trace[self._param_name("m")].values[:, :, pool_group].reshape(1, -1)
+            gamma = np.zeros(delta.T.shape)
 
         A = (t[:, None] > self.s) * 1
-        gamma = np.zeros(delta.pt.shape)
+        
         for i in range(gamma.shape[0]):
             gamma[i] = (
-                (self.s[i] - m - gamma[:i].sum(axis=0)) *
-                (1 - ((k + delta[:, :i].sum(axis=1)) / (k + delta[:, :i+1].sum(axis=1)))).T
+                (self.s[i] - m - gamma[:i].sum(axis=0)) * (1 - ((k + delta[:, :i].sum(axis=1)) / (k + delta[:, :i+1].sum(axis=1))))
             )
         g = (
             (k + A @ delta.T) *
@@ -104,7 +111,7 @@ class LogisticGrowth(TimeSeriesModel):
         )
         return self.cap_scaled / (1 + np.exp(-g))
 
-    def plot(self, trace, scaled_t, y_scaler):
+    def plot(self, trace, scaled_t, y_scaler, drawer):
         ax = add_subplot()
         ax.set_title(str(self))
         ax.set_xticks([])
