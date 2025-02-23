@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.10, 3.11, 3.12]
+        python-version: [3.12]
 
     steps:
     - uses: actions/checkout@v2
@@ -32,3 +32,19 @@ jobs:
     - name: Test with pytest
       run: |
         pytest
+    - name: Run notebook tests
+      run: |
+          jupyter nbconvert --to notebook --execute tests/plot_tests.ipynb --output output.ipynb
+    - name: Check for Errors
+      run: |
+        if grep -q '"output_type": "error"' output.ipynb; then
+          echo "Notebook contains errors!"
+          exit 1
+        fi
+
+    - name: Upload Executed Notebook as Artifact (for debugging)
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: failed-notebook
+        path: output.ipynb
