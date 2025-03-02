@@ -20,6 +20,7 @@ class LinearTrend(TimeSeriesModel):
         super().__init__()
 
     def definition(self, model, X, scale_factor):
+        self.t_idx_ = X.columns.get_loc("t")
         t = X["t"].values
         group, n_groups, self.groups_ = get_group_definition(X, self.pool_cols, self.pool_type)
         self.s = np.linspace(0, np.max(t), self.n_changepoints + 2)[1:-1]
@@ -53,7 +54,7 @@ class LinearTrend(TimeSeriesModel):
         return g
 
     def _predict(self, trace, t, pool_group=0):
-        t = t.squeeze()
+        t = t[:, self.t_idx_].squeeze()
         A = (t[:, None] > self.s) * 1
         if isinstance(trace, Dataset):
             k = trace[self._param_name("k")][:, :, pool_group].values.reshape(1, -1)

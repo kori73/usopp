@@ -33,7 +33,7 @@ class Regressor(TimeSeriesModel):
     def _predict(self, trace, t, pool_group=0):
         k = trace[self._param_name("k")][pool_group, :]
         X = t[:, self.feature_indices_]
-        return X @ k
+        return (X @ k).reshape(-1, 1)
 
     def plot(self, trace, scaled_t, y_scaler):
         ax = add_subplot()
