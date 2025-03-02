@@ -16,10 +16,10 @@ class Regressor(TimeSeriesModel):
         super().__init__()
 
     def definition(self, model, X, scale_factor):
-        on = X[self.on].cat.categories
-        self.shape_ = len(on)
-        group, n_groups, self.groups_ = get_group_definition(X, self.pool_cols, self.pool_type)
+        self.feature_indices_ = X.columns.get_indexer(self.on)
+        self.shape_ = len(self.on)
 
+        group, n_groups, self.groups_ = get_group_definition(X, self.pool_cols, self.pool_type)
         with model:
             if self.pool_type == "partial":
                 sigma_k = pm.HalfCauchy(self._param_name('sigma_k'), beta=self.scale)
@@ -28,13 +28,12 @@ class Regressor(TimeSeriesModel):
 
             else:
                 k = pm.Normal(self._param_name('k'), mu=0, sigma=self.scale, shape=(n_groups, self.shape_))
-
-        return k[group, X[self.on].cat.codes]
+        return pm.math.sum(X[self.on].values * k[group], axis=1)
 
     def _predict(self, trace, t, pool_group=0):
-        ind = trace[self._param_name("k")][:, pool_group]
-
-        return np.ones_like(t)[:, None] * ind.reshape(1, -1)
+        k = trace[self._param_name("k")][pool_group, :]
+        X = t[:, self.feature_indices_]
+        return X @ k
 
     def plot(self, trace, scaled_t, y_scaler):
         ax = add_subplot()
