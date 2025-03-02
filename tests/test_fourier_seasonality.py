@@ -10,5 +10,6 @@ def test_can_fit_generated_data(seasonal_data):
 
     # No groups, so we can take mean over 1 as well
     model_beta = np.mean(model.trace_[model._param_name("beta")], axis=0)
-
     np.testing.assert_allclose(model_beta, true_beta, atol=0.12)
+    res = model.predict(data[["t"]])
+    np.testing.assert_allclose(res.yhat.squeeze(), data["value"], atol=0.5)

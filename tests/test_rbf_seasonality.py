@@ -11,4 +11,6 @@ def test_can_fit_generated_data(rbf_seasonal_data):
     model = RBFSeasonality(peaks=ps, period=pd.Timedelta(days=365.25), sigma=0.015)
     model.fit(data[['t']], data['value'], y_scaler=IdentityScaler)
     model_beta = np.mean(model.trace_[model._param_name("beta")], axis=0)
+    res = model.predict(data[['t']])
+    np.testing.assert_allclose(res.yhat.squeeze(), data['value'], atol=0.01)
     np.testing.assert_allclose(model_beta, true_beta, atol=0.12)

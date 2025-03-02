@@ -16,6 +16,9 @@ class IdentityScaler:
     def transform(self, data):
         return data
 
+    def inv_transform(self, data):
+        return data
+
     def fit_transform(self, data):
         return data
 
