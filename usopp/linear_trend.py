@@ -53,6 +53,7 @@ class LinearTrend(TimeSeriesModel):
         return g
 
     def _predict(self, trace, t, pool_group=0):
+        t = t.squeeze()
         A = (t[:, None] > self.s) * 1
         if isinstance(trace, Dataset):
             k = trace[self._param_name("k")][:, :, pool_group].values.reshape(1, -1)

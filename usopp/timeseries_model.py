@@ -14,14 +14,17 @@ class TimeSeriesModel(ABC):
         if not X.index.is_monotonic_increasing:
             raise ValueError('index of X is not monotonically increasing. You might want to call `.reset_index()`')
 
-        X_to_scale = X.select_dtypes(exclude='category')
+        X_to_scale = X[["t"]]
         self._X_scaler_ = X_scaler()
         self._y_scaler_ = y_scaler()
 
         X_scaled = self._X_scaler_.fit_transform(X_to_scale)
         y_scaled = self._y_scaler_.fit_transform(y)
         model = pm.Model()
-        X_scaled = X_scaled.join(X.select_dtypes('category'))
+
+        X_scaled = X_scaled.join(
+            X.drop(columns=["t"], axis=1)
+        )
         del X
         mu = self.definition(
             model, X_scaled, self._X_scaler_.scale_factor_
@@ -62,6 +65,28 @@ class TimeSeriesModel(ABC):
         fig.tight_layout()
         return t
 
+    def predict(self, X, ci_percentiles=None):
+        X_to_scale = X[["t"]]
+
+        X_scaled = self._X_scaler_.transform(X_to_scale)
+        X_scaled = X_scaled.join(X.drop(columns=["t"], axis=1))
+        y_hat_scaled = self._predict(self.trace_, X_scaled.values)
+
+        # TODO: We only take the uncertainty of the parameters here, still need to add the uncertainty
+        # from the likelihood as well
+
+        y_hat = self._y_scaler_.inv_transform(y_hat_scaled)
+        result = pd.DataFrame(y_hat, index=X.index, columns=["yhat"])
+        if ci_percentiles is not None:
+            percentiles = np.percentile(y_hat, ci_percentiles, axis=1)
+            for i, percentile in enumerate(ci_percentiles):
+                result[f"percentile_{percentile}"] = percentiles[i]
+        return result
+
+    @abstractmethod
+    def _predict(self, trace, X):
+        pass
+
     @abstractmethod
     def plot(self, trace, t, y_scaler):
         pass
@@ -99,6 +124,12 @@ class AdditiveTimeSeries(TimeSeriesModel):
         right = self.right.plot(*args, **kwargs)
         return left + right
 
+    def _predict(self, trace, x_scaled):
+        return (
+            self.left._predict(trace, x_scaled) +
+            self.right._predict(trace, x_scaled)
+        )
+
     def __repr__(self):
         return (
             f"AdditiveTimeSeries( \n"
@@ -117,6 +148,12 @@ class MultiplicativeTimeSeries(TimeSeriesModel):
     def definition(self, *args, **kwargs):
         return self.left.definition(*args, **kwargs) * (
             1 + self.right.definition(*args, **kwargs)
+        )
+
+    def _predict(self, trace, x_scaled):
+        return (
+            self.left._predict(trace, x_scaled) *
+            (1 + self.right._predict(trace, x_scaled))
         )
 
     def plot(self, trace, scaled_t, y_scaler):

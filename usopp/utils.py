@@ -16,6 +16,9 @@ class IdentityScaler:
     def transform(self, data):
         return data
 
+    def inv_transform(self, data):
+        return data
+
     def fit_transform(self, data):
         return data
 
@@ -38,7 +41,7 @@ class MinMaxScaler:
         return self
 
     def transform(self, series):
-        return (series - self.min_) / self.scale_factor_
+        return ((series - self.min_) / self.scale_factor_).astype("float")
 
     def fit_transform(self, series):
         self.fit(series)
@@ -224,6 +227,20 @@ def rbf_seasonal_data(n_components, sigma=0.015, noise=0.001):
         beta,
     )
 
+
+def regressor_data(n_features, scale=1., noise=0.001):
+    t = np.linspace(0, 1, 1000)
+
+    k = np.random.normal(0, scale, size=(n_features))
+    features = np.random.normal(0, scale, size=(len(t), n_features))
+    value  = features @ k + np.random.randn(len(t)) * noise
+
+    df = pd.DataFrame(
+        {"t": pd.date_range("2018-1-1", periods=len(t)), "value": value}
+    )
+    for i in range(n_features):
+        df[f"feature{i}"] = features[:, i]
+    return df, k
 
 def get_group_definition(X, pool_cols, pool_type):
     if pool_type == 'complete':

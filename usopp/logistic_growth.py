@@ -86,7 +86,7 @@ class LogisticGrowth(TimeSeriesModel):
         return growth
 
     def _predict(self, trace, t, pool_group=0):
-
+        t = t.squeeze()
         delta = trace[self._param_name("delta")]
         if isinstance(delta, np.ndarray):
             delta = delta[pool_group].reshape(1, self.n_changepoints)
