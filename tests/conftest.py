@@ -47,3 +47,10 @@ def additive_timeseries_data(request):
     n_components, n_changepoints, n_features = request.param
     data = utils.additive_timeseries_data(n_components=5)
     return data, n_components, n_changepoints, n_features
+
+@pytest.fixture(params=[(5, 2, 2)])
+def multiplicative_seasonality_data(request):
+    np.random.seed(42)
+    n_components, n_changepoints, n_features = request.param
+    data = utils.multiplicative_seasonality_data(n_components=5)
+    return data, n_components, n_changepoints, n_features
