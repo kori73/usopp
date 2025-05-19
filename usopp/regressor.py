@@ -2,7 +2,7 @@ import numpy as np
 from usopp.timeseries_model import TimeSeriesModel
 from usopp.utils import add_subplot, get_group_definition
 import pymc as pm
-
+from xarray.core.dataset import Dataset
 
 class Regressor(TimeSeriesModel):
     def __init__(self, on: str, scale: float = 1., name: str = None, pool_cols=None, pool_type='complete'):
@@ -31,12 +31,18 @@ class Regressor(TimeSeriesModel):
         return pm.math.sum(X[self.on].values * k[group], axis=1)
 
     def _predict(self, trace, t, pool_group=0):
-        k = trace[self._param_name("k")][pool_group, :]
+        if isinstance(trace, Dataset):
+            k = trace[self._param_name("k")][:, :, pool_group, :].values.reshape(self.shape_, -1)
+        else:
+            k = trace[self._param_name("k")][pool_group, :]
         X = t[:, self.feature_indices_]
-        return (X @ k).reshape(-1, 1)
+        result = X @ k
+        if result.ndim == 1:
+            result = result[:, np.newaxis]
+        return result
 
-    def plot(self, trace, scaled_t, y_scaler):
-        ax = add_subplot()
+    def plot(self, trace, scaled_t, y_scaler, drawer):
+        ax = drawer.add_subplot()
         ax.set_title(str(self))
         # ax.set_xticks([])
         trend_return = np.empty((len(scaled_t), len(self.groups_)))
