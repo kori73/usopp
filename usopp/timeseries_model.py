@@ -4,13 +4,13 @@ import pandas as pd
 import numpy as np
 import pymc as pm
 
-from usopp.utils import MinMaxScaler, StdScaler, add_subplot
+from usopp.utils import MinMaxScaler, MaxScaler, add_subplot
 from usopp.likelihood import Gaussian
 from usopp.utils import Drawer
 
 
 class TimeSeriesModel(ABC):
-    def fit(self, X, y, X_scaler=MinMaxScaler, y_scaler=StdScaler, likelihood=None, use_mcmc=False, **sample_kwargs):
+    def fit(self, X, y, X_scaler=MinMaxScaler, y_scaler=MaxScaler, likelihood=None, use_mcmc=False, **sample_kwargs):
         if not X.index.is_monotonic_increasing:
             raise ValueError('index of X is not monotonically increasing. You might want to call `.reset_index()`')
 
@@ -76,7 +76,8 @@ class TimeSeriesModel(ABC):
         # from the likelihood as well
 
         y_hat = self._y_scaler_.inv_transform(y_hat_scaled)
-        result = pd.DataFrame(y_hat, index=X.index, columns=["yhat"])
+        mean = y_hat.mean(axis=1)
+        result = pd.DataFrame(mean, index=X.index, columns=["yhat"])
         if ci_percentiles is not None:
             percentiles = np.percentile(y_hat, ci_percentiles, axis=1)
             for i, percentile in enumerate(ci_percentiles):
