@@ -40,3 +40,17 @@ def regressor_data(request):
     n_features = request.param
     data, k = utils.regressor_data(n_features, noise=0.0000000001)
     return data, k, n_features
+
+@pytest.fixture(params=[(5, 2, 2)])
+def additive_timeseries_data(request):
+    np.random.seed(42)
+    n_components, n_changepoints, n_features = request.param
+    data = utils.additive_timeseries_data(n_components=5)
+    return data, n_components, n_changepoints, n_features
+
+@pytest.fixture(params=[(5, 2, 2)])
+def multiplicative_seasonality_data(request):
+    np.random.seed(42)
+    n_components, n_changepoints, n_features = request.param
+    data = utils.multiplicative_seasonality_data(n_components=5)
+    return data, n_components, n_changepoints, n_features

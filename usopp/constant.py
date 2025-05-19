@@ -1,7 +1,9 @@
 import numpy as np
+import pymc as pm
+from xarray.core.dataset import Dataset
+
 from usopp.timeseries_model import TimeSeriesModel
 from usopp.utils import add_subplot, get_group_definition
-import pymc as pm
 
 
 class Constant(TimeSeriesModel):
@@ -29,9 +31,12 @@ class Constant(TimeSeriesModel):
         return c[group]
 
     def _predict(self, trace, t, pool_group=0):
-        ind = trace[self._param_name("c")][:, pool_group]
+        if isinstance(trace, Dataset):
+            ind = trace[self._param_name("c")][:, :, pool_group].values
+        else:
+            ind = trace[self._param_name("c")][pool_group]
 
-        return np.ones_like(t)[:, None] * ind.reshape(1, -1)
+        return np.ones_like(t) * ind.reshape(1, -1)
 
     def plot(self, trace, scaled_t, y_scaler):
         ax = add_subplot()

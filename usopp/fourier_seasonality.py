@@ -30,6 +30,7 @@ class FourierSeasonality(TimeSeriesModel):
         return np.concatenate((np.cos(x), np.sin(x)), axis=1)
 
     def definition(self, model, X, scale_factor):
+        self.t_idx_ = X.columns.get_loc("t")
         t = X["t"].values
         group, n_groups, self.groups_ = get_group_definition(X, self.pool_cols, self.pool_type)
         self.p_ = self.period / scale_factor['t']
@@ -56,7 +57,9 @@ class FourierSeasonality(TimeSeriesModel):
         return seasonality
 
     def _predict(self, trace, t, pool_group=0):
-        t = t.squeeze()
+        if len(t.shape) != 1:
+            t = t[:, self.t_idx_].squeeze()
+
         beta = trace[self._param_name("beta")]
         # mcmc
         if isinstance(beta, DataArray):

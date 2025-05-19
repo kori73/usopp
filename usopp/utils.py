@@ -228,11 +228,14 @@ def rbf_seasonal_data(n_components, sigma=0.015, noise=0.001):
     )
 
 
-def regressor_data(n_features, scale=1., noise=0.001):
+def regressor_data(n_features, loc=0., scale=1., noise=0.001, binary=False):
     t = np.linspace(0, 1, 1000)
 
-    k = np.random.normal(0, scale, size=(n_features))
-    features = np.random.normal(0, scale, size=(len(t), n_features))
+    k = np.random.normal(loc, scale, size=(n_features))
+    if binary:
+        features = np.random.binomial(n=1, p=0.1, size=(len(t), n_features))
+    else:
+        features = np.random.normal(0, scale, size=(len(t), n_features))
     value  = features @ k + np.random.randn(len(t)) * noise
 
     df = pd.DataFrame(
@@ -241,6 +244,43 @@ def regressor_data(n_features, scale=1., noise=0.001):
     for i in range(n_features):
         df[f"feature{i}"] = features[:, i]
     return df, k
+
+def additive_timeseries_data(n_components=5, n_changepoints=2, n_features=2):
+
+    df_seasonal, _ = seasonal_data(n_components=n_components)
+    df_trend, _ = trend_data(n_changepoints=n_changepoints)
+    df_regressor, _ = regressor_data(loc=2.0, n_features=n_features, binary=True)
+
+    df_seasonal = df_seasonal.rename(columns={"value": "value_seasonal"})
+    df_trend = df_trend.rename(columns={"value": "value_trend"})
+    df_trend = df_trend.drop(columns=["t"])
+
+    df_regressor = df_regressor.rename(columns={"value": "value_regressor"})
+    df_regressor = df_regressor.drop(columns=["t"])
+
+    df = pd.concat([df_seasonal, df_trend, df_regressor], axis=1)
+    df["value"] = df["value_seasonal"] + df["value_trend"] + df["value_regressor"]
+    df = df.drop(columns=["value_seasonal", "value_trend", "value_regressor"], axis=1)
+    return df
+
+def multiplicative_seasonality_data(n_components=5, n_changepoints=2, n_features=2):
+
+    df_seasonal, _ = seasonal_data(n_components=n_components)
+    df_trend, _ = trend_data(n_changepoints=n_changepoints)
+    df_trend["value"] = df_trend["value"] + 1.0
+    df_regressor, _ = regressor_data(loc=0.0, n_features=n_features, binary=True)
+
+    df_seasonal = df_seasonal.rename(columns={"value": "value_seasonal"})
+    df_trend = df_trend.rename(columns={"value": "value_trend"})
+    df_trend = df_trend.drop(columns=["t"])
+
+    df_regressor = df_regressor.rename(columns={"value": "value_regressor"})
+    df_regressor = df_regressor.drop(columns=["t"])
+
+    df = pd.concat([df_seasonal, df_trend, df_regressor], axis=1)
+    df["value"] = df["value_seasonal"] * df["value_trend"] + df["value_regressor"]
+    df = df.drop(columns=["value_seasonal", "value_trend", "value_regressor"], axis=1)
+    return df
 
 def get_group_definition(X, pool_cols, pool_type):
     if pool_type == 'complete':
