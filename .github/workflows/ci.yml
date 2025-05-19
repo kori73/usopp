@@ -49,11 +49,13 @@ jobs:
         name: output-notebook
         path: tests/output.ipynb
 
-    - name: Build Sphinx documentation
-      run: |
-        sphinx-build -b html -W docs/source docs/build/html
+    - name: Generate API docs (usopp.rst)
+      run: sphinx-apidoc -o docs/source/ usopp
 
-    - name: Upload built docs
+    - name: Build Sphinx documentation
+      run: sphinx-build -b html -W docs/source docs/build/html
+
+    - name: Upload HTML docs
       uses: actions/upload-artifact@v4
       with:
         name: sphinx-html
