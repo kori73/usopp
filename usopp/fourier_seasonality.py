@@ -57,7 +57,8 @@ class FourierSeasonality(TimeSeriesModel):
         return seasonality
 
     def _predict(self, trace, t, pool_group=0):
-        t = t[:, self.t_idx_].squeeze()
+        if len(t.shape) != 1:
+            t = t[:, self.t_idx_].squeeze()
 
         beta = trace[self._param_name("beta")]
         # mcmc
