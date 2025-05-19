@@ -63,7 +63,7 @@ class TimeSeriesModel(ABC):
             else:
                 ax.scatter(X_true["t"], y_true, c="k", marker='.', alpha=0.2, lw=0.5)
         fig.tight_layout()
-        return t
+        return self._y_scaler_.inv_transform(total)
 
     def predict(self, X, ci_percentiles=None):
         X_to_scale = X[["t"]]
