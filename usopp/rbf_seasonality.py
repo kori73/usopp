@@ -16,6 +16,7 @@ class RBFSeasonality(TimeSeriesModel):
         self,
         name: str = None,
         peaks: np.ndarray = None,
+        n_peaks: int = 20,
         period: pd.Timedelta = pd.Timedelta(days=365.25),
         shrinkage_strength=100,
         pool_cols=None,
@@ -23,7 +24,7 @@ class RBFSeasonality(TimeSeriesModel):
         pool_type='complete'
     ):
         if peaks is None:
-            self.peaks = get_periodic_peaks(period=period)
+            self.peaks = get_periodic_peaks(period=period, n=n_peaks)
         else:
             self.peaks = peaks
         self.period = period
