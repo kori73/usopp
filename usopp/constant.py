@@ -38,8 +38,8 @@ class Constant(TimeSeriesModel):
 
         return np.ones_like(t) * ind.reshape(1, -1)
 
-    def plot(self, trace, scaled_t, y_scaler):
-        ax = add_subplot()
+    def plot(self, trace, scaled_t, y_scaler, drawer):
+        ax = drawer.add_subplot()
         ax.set_title(str(self))
         trend_return = np.empty((len(scaled_t), len(self.groups_)))
         plot_data = []
