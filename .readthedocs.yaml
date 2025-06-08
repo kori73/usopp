@@ -25,4 +25,4 @@ python:
       extra_requirements: ["dev", "plot"]   # optional extras
 
 requirements:
-  file: docs/requirements.txt   # RTD will pip-install this file too
+  file: docs/requirements.txt
