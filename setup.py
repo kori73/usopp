@@ -5,7 +5,11 @@ from setuptools import setup, find_packages
 base_packages = ["numpy", "pandas", "pymc"]
 plot_packages = ["matplotlib"]
 dev_packages = ["pytest", "hypothesis", "nbconvert", "jupyter", "ipykernel"]
-
+docs_packages = [
+    "sphinx",
+    "myst-nb",
+    "sphinx-autodoc-typehints",
+]
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
@@ -18,6 +22,7 @@ setup(
     extras_require={
         "dev": dev_packages,
         "plot": plot_packages,
+        "docs": docs_packages,
     },
     description="A hierarchical version of Facebook's Prophet in PyMC3",
     author="Koray Beyaz",

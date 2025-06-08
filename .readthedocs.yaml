@@ -22,7 +22,4 @@ python:
     # editable install of *this* project (same as `pip install -e .`)
     - method: pip
       path: .
-      extra_requirements: ["dev", "plot"]   # optional extras
-
-requirements:
-  file: docs/requirements.txt   # RTD will pip-install this file too
+      extra_requirements: ["dev", "plot", "docs"]   # optional extras
