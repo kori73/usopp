@@ -1,0 +1,4 @@
+sphinx
+myst-nb
+sphinx-autodoc-typehints
+usopp  # if you want RTD to pip-install your package too
