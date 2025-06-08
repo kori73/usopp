@@ -12,7 +12,13 @@ documentation for details.
 
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :caption: Example notebooks
+   :maxdepth: 1
 
-   usopp
+   examples/index
+
+.. toctree::
+   :caption: API Reference
+   :maxdepth: 2
+
+   modules
